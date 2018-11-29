@@ -1,22 +1,24 @@
+#using Iterators
+
 #############################################
 ###### Structs ##############################
 #############################################
 struct Reaction ## Reaction Object
 	index::Int64 # List index of reaction
-	reactants::Array{Int64} # List of reactant indices
-	react_coef::Array{Int64} # List of reactant coefficients
-	products::Array{Int64} # List of product indices
-	prod_coef::Array{Int64} # List of product coefficients
-	catalysts::Array{Int64} # Catalyst indicies
-	cat_coef::Array{Float64} # Catalysts coefficients
+	reactants::Array{Int64,1} # List of reactant indices
+	react_coef::Array{Int64,1} # List of reactant coefficients
+	products::Array{Int64,1} # List of product indices
+	prod_coef::Array{Int64,1} # List of product coefficients
+	catalysts::Array{Int64,1} # Catalyst indicies
+	cat_coef::Array{Float64,1} # Catalysts coefficients
 	propensity::String # Propensity identifier
 	rate_constant::Float64 # Rate constant
 end
 
 struct CRS # Chemical reaction system object
-	molecule_list::Array{String} # List of molcule strings
+	molecule_list::Array{String,1} # List of molcule strings
 	molecule_dict::Dict{String, Int64} # Dict maps molecule strings to index
-	reaction_list::Array{Reaction} # List of reaction objects
+	reaction_list::Array{Reaction,1} # List of reaction objects
 	parameters::Dict{Any,Any} # Every other parameter
 end
 
@@ -24,6 +26,8 @@ end
 #############################################
 ###### CRS functions ########################
 #############################################
+
+
 function generate_all_binary_seqs(max_L)
     ### Generate all possible sequences
     all_seqs = []
@@ -61,7 +65,7 @@ function all_splits(seq)
     return left,right
 end
 
-function calculate_reduced_mass(m1_string, m2_string, mA,mB)
+function calculate_reduced_mass_binary(m1_string, m2_string, mA,mB)
     m1_mass = countall(m1_string,"A")*mA + countall(m1_string,"B")*mB
     m2_mass = countall(m2_string,"A")*mA + countall(m2_string,"B")*mB
     reduce = reduced_mass(m1_mass,m2_mass)
@@ -72,7 +76,8 @@ function reduced_mass(m1,m2)
     return (m1*m2)/(m1+m2)
 end
 
-function bimolecular_coef(k, T, R, V,m)
+function bimolecular_coef(k, T, R, V,m1, m2)
+    m = reduced_mass(m1,m2)
     return (k/V)*sqrt(R*T/m)
 end 
 
@@ -109,7 +114,7 @@ function generate_binary_ligation_CRS(max_L, kf, kb, volume::Float64 = 1.0, T::F
             products = [ molecule_dict[s] ]
             product_coef = [1]
             
-            m_red = calculate_reduced_mass(left_side[i], right_side[i],mA, mB)
+            m_red = calculate_reduced_mass_binary(left_side[i], right_side[i],mA, mB)
             k = bimolecular_coef(kf, T, R, volume, m_red)
             
             forward_rxn = Reaction(rID, reactants, reactant_coef, products, product_coef, Array{Int64}(undef,0), Array{Float64}(undef,0), "STD", k)
@@ -147,3 +152,17 @@ function copy_CRS(original_CRS, volume_multiplier)
     new_CRS = CRS(original_CRS.molecule_list, original_CRS.molecule_dict, reaction_list, new_parameters )
     return new_CRS 
 end
+
+function generate_tuples(max, sum)
+    pairs = collect(Iterators.product(1:max, 1:max))
+    my_pairs = []
+    for pa in pairs
+        if sum(pa) <= sum
+            if !(pa in my_pairs) && !(reverse(pa) in my_pairs)
+                push!(my_pairs,pa)
+            end
+        end
+    end
+    return my_pairs
+end
+

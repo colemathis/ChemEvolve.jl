@@ -1,5 +1,5 @@
 # ChemEvolve.jl
-Dr Cole Mathis, Dr Sara Walker & ELife@ASU 
+Dr Cole Mathis, Dr Sara Walker, ELife@ASU & CroninLab
 September 2018
 
 Julia Implementation of Gillespie Algorithm with flexible tools for dealing 
